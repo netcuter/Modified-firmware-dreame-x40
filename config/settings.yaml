@@ -1,0 +1,129 @@
+# Konfiguracja Dreame X40 AI Assistant
+
+# ===== VALETUDO =====
+valetudo:
+  # IP robota z zainstalowanym Valetudo
+  host: "192.168.1.100"  # ZMIEŃ NA IP TWOJEGO ROBOTA
+  port: 80
+  protocol: "http"  # http lub https
+
+  # API endpoints (Valetudo REST API)
+  api_base: "/api/v2"
+
+  # MQTT (jeśli włączone w Valetudo)
+  mqtt:
+    enabled: true
+    broker: "192.168.1.100"  # Zazwyczaj ten sam co robot
+    port: 1883
+    username: ""  # Jeśli skonfigurowane w Valetudo
+    password: ""
+    base_topic: "valetudo"  # Domyślny topic Valetudo
+
+  # Timeout dla requestów
+  timeout: 10
+
+# ===== KONFIGURACJA AI =====
+ai:
+  # Domyślny model: "local" lub "online"
+  default_model: "local"
+
+  # Automatyczne przełączanie jeśli model nie działa
+  auto_fallback: true
+
+  # Język komunikacji
+  language: "pl"  # pl, en, de, etc.
+
+  # Model lokalny (LM Studio)
+  local:
+    enabled: true
+    type: "lmstudio"
+    host: "192.168.1.50"  # IP komputera z LM Studio
+    port: 1234
+    model: "local-model"
+    timeout: 30
+    max_tokens: 2000
+    temperature: 0.7
+
+  # Modele online
+  online:
+    # Domyślny provider online: "openai", "anthropic", "google"
+    default_provider: "openai"
+
+    # OpenAI (GPT-4, GPT-3.5)
+    openai:
+      enabled: true
+      api_key: ""  # Wpisz swój klucz API
+      model: "gpt-4"  # gpt-4, gpt-3.5-turbo
+      base_url: "https://api.openai.com/v1"
+      max_tokens: 2000
+      temperature: 0.7
+
+    # Anthropic (Claude)
+    anthropic:
+      enabled: false
+      api_key: ""  # Wpisz swój klucz API
+      model: "claude-3-5-sonnet-20241022"
+      max_tokens: 2000
+      temperature: 0.7
+
+    # Google (Gemini)
+    google:
+      enabled: false
+      api_key: ""  # Wpisz swój klucz API
+      model: "gemini-pro"
+      max_tokens: 2000
+      temperature: 0.7
+
+# ===== POLECENIA GŁOSOWE =====
+voice:
+  enabled: true
+  language: "pl-PL"
+  # Text-to-Speech dla odpowiedzi robota
+  tts:
+    enabled: true
+    engine: "google"  # google, azure, local
+    voice: "pl-PL-Wavenet-A"
+  # Speech-to-Text dla poleceń
+  stt:
+    enabled: true
+    engine: "google"  # google, whisper, local
+
+# ===== WEB INTERFACE =====
+web:
+  host: "0.0.0.0"
+  port: 3000
+  https: false
+  auth:
+    enabled: true
+    username: "admin"
+    password: "admin123"  # ZMIEŃ TO!
+
+# ===== API =====
+api:
+  host: "0.0.0.0"
+  port: 8000
+  cors_origins:
+    - "http://localhost:3000"
+    - "http://192.168.1.*"
+
+# ===== LOGGING =====
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  file: "logs/dreame_x40.log"
+  max_size: "10MB"
+  backup_count: 5
+
+# ===== ZAAWANSOWANE =====
+advanced:
+  # Próby ponownego połączenia
+  reconnect_attempts: 5
+  reconnect_delay: 5
+
+  # Cache dla map
+  map_cache_enabled: true
+  map_cache_dir: "data/maps"
+
+  # Historia rozmów z AI
+  conversation_history: true
+  history_length: 50
+  history_dir: "data/conversations"
