@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Follow Me - Dreame X40</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .status {
+            background: #f5f5f5;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .status-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .status-label {
+            color: #666;
+        }
+
+        .status-value {
+            color: #333;
+            font-weight: 600;
+        }
+
+        .status-value.active {
+            color: #10b981;
+        }
+
+        .status-value.inactive {
+            color: #ef4444;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 12px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .alert-info {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .coordinates {
+            background: #f9fafb;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .coordinates-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #374151;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .tracking-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            margin-right: 8px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Follow Me Mode</h1>
+        <p class="subtitle">Robot będzie podążał za Twoim telefonem</p>
+
+        <div id="alert" class="alert"></div>
+
+        <div class="status">
+            <div class="status-item">
+                <span class="status-label">Status GPS:</span>
+                <span id="gps-status" class="status-value inactive">Nieaktywny</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Status śledzenia:</span>
+                <span id="follow-status" class="status-value inactive">Zatrzymany</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Pozycja wysłana:</span>
+                <span id="updates-sent" class="status-value">0</span>
+            </div>
+        </div>
+
+        <button id="startBtn" class="btn btn-primary">
+            📍 Rozpocznij śledzenie
+        </button>
+
+        <button id="stopBtn" class="btn btn-danger" style="display: none;">
+            ⏹️ Zatrzymaj śledzenie
+        </button>
+
+        <div class="coordinates">
+            <div class="coordinates-title">Ostatnia pozycja GPS:</div>
+            <div id="coordinates">Brak danych</div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = window.location.protocol + '//' + window.location.hostname + ':8000/api/v1';
+        let watchId = null;
+        let followingActive = false;
+        let updateCount = 0;
+        let updateInterval = null;
+        let lastPosition = null;
+
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const gpsStatus = document.getElementById('gps-status');
+        const followStatus = document.getElementById('follow-status');
+        const updatesSent = document.getElementById('updates-sent');
+        const coordinates = document.getElementById('coordinates');
+        const alert = document.getElementById('alert');
+
+        function showAlert(message, type = 'info') {
+            alert.textContent = message;
+            alert.className = `alert alert-${type} show`;
+            setTimeout(() => alert.classList.remove('show'), 5000);
+        }
+
+        function updateGPSStatus(active) {
+            gpsStatus.textContent = active ? 'Aktywny' : 'Nieaktywny';
+            gpsStatus.className = active ? 'status-value active' : 'status-value inactive';
+        }
+
+        function updateFollowStatus(active) {
+            followingActive = active;
+            followStatus.innerHTML = active ?
+                '<span class="tracking-indicator"></span>Aktywny' : 'Zatrzymany';
+            followStatus.className = active ? 'status-value active' : 'status-value inactive';
+        }
+
+        async function sendPosition(latitude, longitude) {
+            try {
+                // Convert GPS coordinates to map coordinates (simplified)
+                // In real implementation, you'd need to map GPS to robot's coordinate system
+                const x = Math.round(latitude * 10000);  // Simplified conversion
+                const y = Math.round(longitude * 10000);
+
+                const response = await fetch(`${API_URL}/tracking/update-position`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ x, y })
+                });
+
+                if (response.ok) {
+                    updateCount++;
+                    updatesSent.textContent = updateCount;
+                    coordinates.textContent = `Lat: ${latitude.toFixed(6)}, Lon: ${longitude.toFixed(6)}\nMap: X=${x}, Y=${y}`;
+                    lastPosition = { latitude, longitude };
+                }
+            } catch (error) {
+                console.error('Failed to send position:', error);
+            }
+        }
+
+        async function startFollowing() {
+            if (!navigator.geolocation) {
+                showAlert('GPS nie jest dostępne na tym urządzeniu', 'error');
+                return;
+            }
+
+            try {
+                // Request permission and start watching
+                watchId = navigator.geolocation.watchPosition(
+                    (position) => {
+                        updateGPSStatus(true);
+                        sendPosition(position.coords.latitude, position.coords.longitude);
+                    },
+                    (error) => {
+                        updateGPSStatus(false);
+                        showAlert('Błąd GPS: ' + error.message, 'error');
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 5000,
+                        maximumAge: 0
+                    }
+                );
+
+                // Start follow mode on server
+                const response = await fetch(`${API_URL}/tracking/start-following`, {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    updateFollowStatus(true);
+                    startBtn.style.display = 'none';
+                    stopBtn.style.display = 'block';
+                    showAlert('Śledzenie rozpoczęte! Robot będzie podążał za Tobą', 'success');
+                } else {
+                    throw new Error('Failed to start follow mode');
+                }
+            } catch (error) {
+                showAlert('Nie udało się rozpocząć śledzenia: ' + error.message, 'error');
+                stopFollowing();
+            }
+        }
+
+        async function stopFollowing() {
+            if (watchId) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+            }
+
+            try {
+                await fetch(`${API_URL}/tracking/stop-following`, {
+                    method: 'POST'
+                });
+            } catch (error) {
+                console.error('Failed to stop follow mode:', error);
+            }
+
+            updateGPSStatus(false);
+            updateFollowStatus(false);
+            startBtn.style.display = 'block';
+            stopBtn.style.display = 'none';
+            showAlert('Śledzenie zatrzymane', 'info');
+        }
+
+        startBtn.addEventListener('click', startFollowing);
+        stopBtn.addEventListener('click', stopFollowing);
+
+        // Show initial message
+        showAlert('Kliknij "Rozpocznij śledzenie" aby robot zaczął za Tobą podążać', 'info');
+    </script>
+</body>
+</html>

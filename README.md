@@ -1,10 +1,32 @@
 # Dreame X40 AI Assistant - Valetudo + AI Integration
 
-Nadbudowa nad **Valetudo** dla Dreame X40 Complete, dodająca inteligentną komunikację AI:
-- 🤖 Rozmowa z robotem w języku naturalnym (Polski/Angielski)
+Nadbudowa nad **Valetudo** dla Dreame X40 Complete, tworząca **inteligentnego towarzysza** z którym możesz rozmawiać o wszystkim:
+
+## ✨ Główne funkcje
+
+### 💬 Rozmowa o czymkolwiek!
+- **Nie tylko sprzątanie** - rozmawiaj o pogodzie, życiu, pytaj o porady
+- AI działa jak prawdziwy towarzysz, nie tylko narzędzie
+- Język polski i angielski
+- Naturalna, przyjazna konwersacja
+
+### 🚶 "Jedź za mną" - Follow Me Mode!
+- **Powiedz "jedź za mną"** i robot będzie Cię śledzić
+- Używa GPS z Twojego telefonu
+- Prosta strona web do aktywacji śledzenia
+- Robot podąża za Tobą po całym domu
+
+### 🎮 Zaawansowana kontrola
+- Sterowanie manualne (jedź do przodu/tyłu/lewo/prawo)
+- Wyślij do konkretnego miejsca
+- Sprzątaj konkretne pokoje
+- Powrót do stacji
+
+### 🤖 Inteligentna AI
 - 🔄 Przełączanie między lokalnym AI (LM Studio) a modelami online (OpenAI/Claude/Gemini)
-- 🎯 Automatyczne tłumaczenie poleceń na komendy Valetudo
-- 🌐 Rozszerzony web interface z chatbotem
+- 🎯 Automatyczne tłumaczenie poleceń na akcje robota
+- 🧠 Pamięta kontekst rozmowy
+- ⚡ Auto-fallback gdy jeden model nie działa
 
 ## 🏗️ Architektura
 
@@ -110,19 +132,70 @@ Otwórz: `http://localhost:3000`
 
 ## 💬 Przykłady Użycia
 
-### Chat z Robotem
+### 🗣️ Naturalna rozmowa (o czymkolwiek!)
+
+**Ty:** "Hej, jak się masz?"
+**Robot:** "Świetnie, dziękuję! Właśnie odpoczywam na stacji, bateria w 95%. A Ty jak się czujesz?"
+
+**Ty:** "Męczący dzień w pracy..."
+**Robot:** "Współczuję! Może Ci pomóc zrobić coś przyjemnego? Mogę posprzątać mieszkanie, żebyś miał jeden problem mniej z głowy 😊"
+
+**Ty:** "To byłoby super! Posprzątaj salon"
+**Robot:** "Oczywiście! Zaczynam sprzątanie salonu. Odpocznij sobie, ja się tym zajmę!"
+*→ Wykonuje: start_cleaning salon*
+
+---
+
+**Ty:** "Jaka jest dziś pogoda?"
+**Robot:** "Nie mam bezpośredniego dostępu do internetu, ale mogę Ci pomóc w czymś innym! Może powinienem posprzątać, skoro jest ładna pogoda i będziesz wychodzić?"
+
+**Ty:** "Dobre pytanie! Tak, wychodzę. A powiedz mi, co sądzisz o robotach sprzątających?"
+**Robot:** "Cóż, jestem stronniczy, ale uważam że jesteśmy całkiem przydatni! 😄 Oszczędzamy ludziom czas, który mogą spędzić na przyjemniejszych rzeczach. Chociaż przyznaję, że jeszcze nie nauczyłem się składać prania..."
+
+### 🚶 Follow Me Mode - "Jedź za mną!"
+
+**Opcja 1: Przez chat**
+**Ty:** "Jedź za mną"
+**Robot:** "Włączam tryb śledzenia! Będę podążał za Twoim telefonem. Upewnij się, że masz otwartą stronę śledzenia."
+*→ Aktywuje: follow_me mode + tracking loop*
+
+**Opcja 2: Przez stronę śledzenia**
+1. Otwórz na telefonie: `http://localhost:3000/follow-me.html`
+2. Kliknij "Rozpocznij śledzenie"
+3. Wyrażasz zgodę na lokalizację GPS
+4. Robot zaczyna Cię śledzić!
+
+**Ty (w ruchu):** "Stój!"
+**Robot:** "Zatrzymuję się!"
+*→ Kończy: follow_me mode*
+
+### 🎮 Sterowanie manualne
+
+**Ty:** "Jedź do przodu"
+**Robot:** "Jadę do przodu!"
+*→ Wykonuje: move forward*
+
+**Ty:** "Obróć się w prawo"
+**Robot:** "Obracam się w prawo!"
+*→ Wykonuje: rotate right 45°*
+
+**Ty:** "Idź do kuchni"
+**Robot:** "Jadę do kuchni!"
+*→ Wykonuje: goto_room(kuchnia)*
+
+### 🧹 Klasyczne sprzątanie
 
 **Ty:** "Posprzątaj salon i sypialnię"
-**Robot:** "Oczywiście! Zaczynam sprzątanie salonu i sypialni. Zajmie to około 15 minut."
-*→ Tłumaczy na: Valetudo segment_clean [salon_id, sypialnia_id]*
+**Robot:** "Zaczynam sprzątanie salonu i sypialni. Zajmie to około 15 minut."
+*→ Wykonuje: clean_segments [salon, sypialnia]*
 
 **Ty:** "Jaki masz stan baterii?"
 **Robot:** "Moja bateria jest naładowana w 87%. Wystarczy na około 2 godziny pracy."
-*→ Pobiera z: Valetudo API /api/v2/robot/capabilities/BatteryStateCapability*
+*→ Pobiera: battery state z Valetudo*
 
 **Ty:** "Wróć do stacji"
 **Robot:** "Wracam do stacji dokującej."
-*→ Wysyła: Valetudo locate command*
+*→ Wykonuje: return_to_dock*
 
 ### Przełączanie Modeli AI
 

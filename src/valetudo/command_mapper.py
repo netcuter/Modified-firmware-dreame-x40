@@ -38,6 +38,19 @@ class CommandMapper:
     STATUS_KEYWORDS_PL = [
         "status", "stan", "jak się masz", "co robisz", "bateria"
     ]
+    FOLLOW_KEYWORDS_PL = [
+        "jedź za mną", "chodź za mną", "podążaj za mną", "śledź mnie",
+        "chodź ze mną", "jedź ze mną", "follow me"
+    ]
+    GOTO_KEYWORDS_PL = [
+        "jedź do", "pojed do", "idź do", "przejed do"
+    ]
+    MOVE_KEYWORDS_PL = {
+        "forward": ["jedź do przodu", "do przodu", "naprzód"],
+        "backward": ["jedź do tyłu", "do tyłu", "cofnij się"],
+        "left": ["w lewo", "skręć w lewo", "obróć się w lewo"],
+        "right": ["w prawo", "skręć w prawo", "obróć się w prawo"]
+    }
 
     # English keywords
     CLEAN_KEYWORDS_EN = [
@@ -58,6 +71,18 @@ class CommandMapper:
     STATUS_KEYWORDS_EN = [
         "status", "state", "battery", "how are you"
     ]
+    FOLLOW_KEYWORDS_EN = [
+        "follow me", "come with me", "track me", "follow along"
+    ]
+    GOTO_KEYWORDS_EN = [
+        "go to", "move to", "navigate to", "head to"
+    ]
+    MOVE_KEYWORDS_EN = {
+        "forward": ["move forward", "go forward", "ahead"],
+        "backward": ["move backward", "go back", "reverse"],
+        "left": ["turn left", "go left", "rotate left"],
+        "right": ["turn right", "go right", "rotate right"]
+    }
 
     # Room names mapping (Polish -> common patterns)
     ROOM_PATTERNS_PL = {
@@ -137,6 +162,9 @@ class CommandMapper:
             home_kw = self.HOME_KEYWORDS_PL
             locate_kw = self.LOCATE_KEYWORDS_PL
             status_kw = self.STATUS_KEYWORDS_PL
+            follow_kw = self.FOLLOW_KEYWORDS_PL
+            goto_kw = self.GOTO_KEYWORDS_PL
+            move_kw = self.MOVE_KEYWORDS_PL
             room_patterns = self.ROOM_PATTERNS_PL
         else:
             clean_kw = self.CLEAN_KEYWORDS_EN
@@ -145,6 +173,9 @@ class CommandMapper:
             home_kw = self.HOME_KEYWORDS_EN
             locate_kw = self.LOCATE_KEYWORDS_EN
             status_kw = self.STATUS_KEYWORDS_EN
+            follow_kw = self.FOLLOW_KEYWORDS_EN
+            goto_kw = self.GOTO_KEYWORDS_EN
+            move_kw = self.MOVE_KEYWORDS_EN
             room_patterns = self.ROOM_PATTERNS_EN
 
         # Check for cleaning commands
@@ -182,6 +213,36 @@ class CommandMapper:
         # Check for status commands
         if any(kw in text_lower for kw in status_kw):
             return Command(action="status", params={}, confidence=0.9)
+
+        # Check for follow me commands
+        if any(kw in text_lower for kw in follow_kw):
+            return Command(action="follow_me", params={}, confidence=0.95)
+
+        # Check for goto commands
+        if any(kw in text_lower for kw in goto_kw):
+            # Try to extract room/location
+            rooms = self._extract_rooms(text_lower, room_patterns)
+            if rooms:
+                return Command(
+                    action="goto_room",
+                    params={"room": rooms[0]},
+                    confidence=0.9
+                )
+            else:
+                return Command(
+                    action="goto_location",
+                    params={},
+                    confidence=0.7
+                )
+
+        # Check for manual movement commands
+        for direction, keywords in move_kw.items():
+            if any(kw in text_lower for kw in keywords):
+                return Command(
+                    action="move",
+                    params={"direction": direction},
+                    confidence=0.9
+                )
 
         logger.warning(f"Could not parse command: {text}")
         return None

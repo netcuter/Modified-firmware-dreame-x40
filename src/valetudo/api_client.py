@@ -259,3 +259,83 @@ class ValetudoAPIClient:
         """Check if robot is docked"""
         state = await self.get_state()
         return state.get("state") == "docked"
+
+    # ===== Advanced Navigation =====
+
+    async def goto_location(self, x: int, y: int) -> Dict[str, Any]:
+        """Send robot to specific coordinates
+
+        Args:
+            x: X coordinate on the map
+            y: Y coordinate on the map
+
+        Returns:
+            API response
+        """
+        return await self._put("robot/capabilities/GoToLocationCapability", {
+            "action": "goto",
+            "coordinates": {
+                "x": x,
+                "y": y
+            }
+        })
+
+    async def manual_control(self, action: str, value: Optional[float] = None) -> Dict[str, Any]:
+        """Manual control of the robot
+
+        Args:
+            action: Control action ("enable", "disable", "move", "rotate")
+            value: Optional value for move/rotate (speed or angle)
+
+        Returns:
+            API response
+        """
+        payload = {"action": action}
+        if value is not None:
+            payload["value"] = value
+
+        return await self._put("robot/capabilities/ManualControlCapability", payload)
+
+    async def move_forward(self, speed: float = 0.3) -> Dict[str, Any]:
+        """Move robot forward
+
+        Args:
+            speed: Movement speed (0.0-1.0)
+
+        Returns:
+            API response
+        """
+        return await self.manual_control("move", speed)
+
+    async def move_backward(self, speed: float = 0.3) -> Dict[str, Any]:
+        """Move robot backward
+
+        Args:
+            speed: Movement speed (negative value)
+
+        Returns:
+            API response
+        """
+        return await self.manual_control("move", -speed)
+
+    async def rotate_left(self, angle: float = 45.0) -> Dict[str, Any]:
+        """Rotate robot left
+
+        Args:
+            angle: Rotation angle in degrees
+
+        Returns:
+            API response
+        """
+        return await self.manual_control("rotate", angle)
+
+    async def rotate_right(self, angle: float = 45.0) -> Dict[str, Any]:
+        """Rotate robot right
+
+        Args:
+            angle: Rotation angle in degrees (negative)
+
+        Returns:
+            API response
+        """
+        return await self.manual_control("rotate", -angle)

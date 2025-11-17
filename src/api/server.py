@@ -294,7 +294,29 @@ async def execute_command(action: str, params: dict):
         await valetudo_client.return_to_dock()
     elif action == "locate":
         await valetudo_client.locate_robot()
-    # Add more commands as needed
+    elif action == "follow_me":
+        # Import here to avoid circular dependency
+        from ..tracking import user_tracker
+        user_tracker.start_following()
+        # Start follow loop in background
+        asyncio.create_task(user_tracker.follow_loop(valetudo_client))
+    elif action == "move":
+        direction = params.get("direction")
+        if direction == "forward":
+            await valetudo_client.move_forward()
+        elif direction == "backward":
+            await valetudo_client.move_backward()
+        elif direction == "left":
+            await valetudo_client.rotate_left()
+        elif direction == "right":
+            await valetudo_client.rotate_right()
+    elif action == "goto_room":
+        # Note: This would require mapping room names to coordinates
+        # For now, just log
+        logger.info(f"Goto room: {params.get('room')}")
+    elif action == "goto_location":
+        # Would need coordinates from params
+        logger.info("Goto location command received")
 
 
 # === AI Model Management ===
@@ -402,6 +424,74 @@ async def websocket_chat(websocket: WebSocket):
     except Exception as e:
         logger.error(f"WebSocket error: {e}")
         ws_manager.disconnect(websocket)
+
+
+# === User Tracking (Follow Me Mode) ===
+class PositionUpdate(BaseModel):
+    x: int
+    y: int
+
+
+@router.post("/tracking/update-position")
+async def update_user_position(position: PositionUpdate):
+    """Update user's current position for follow-me mode"""
+    from ..tracking import user_tracker
+    user_tracker.update_position(position.x, position.y)
+    return {"status": "success", "position": {"x": position.x, "y": position.y}}
+
+
+@router.post("/tracking/start-following")
+async def start_follow_mode():
+    """Start follow-me mode"""
+    from ..tracking import user_tracker
+    user_tracker.start_following()
+    # Start follow loop
+    asyncio.create_task(user_tracker.follow_loop(valetudo_client))
+    return {"status": "success", "message": "Follow mode activated"}
+
+
+@router.post("/tracking/stop-following")
+async def stop_follow_mode():
+    """Stop follow-me mode"""
+    from ..tracking import user_tracker
+    user_tracker.stop_following()
+    return {"status": "success", "message": "Follow mode deactivated"}
+
+
+@router.get("/tracking/status")
+async def get_tracking_status():
+    """Get tracking status"""
+    from ..tracking import user_tracker
+    return {
+        "following": user_tracker.is_following(),
+        "position": user_tracker.get_position()
+    }
+
+
+# === Manual Control ===
+class ManualMoveRequest(BaseModel):
+    direction: str  # forward, backward, left, right
+
+
+@router.post("/robot/move")
+async def manual_move(request: ManualMoveRequest):
+    """Manually move robot"""
+    try:
+        direction = request.direction
+        if direction == "forward":
+            await valetudo_client.move_forward()
+        elif direction == "backward":
+            await valetudo_client.move_backward()
+        elif direction == "left":
+            await valetudo_client.rotate_left()
+        elif direction == "right":
+            await valetudo_client.rotate_right()
+        else:
+            raise HTTPException(status_code=400, detail="Invalid direction")
+
+        return {"status": "success", "direction": direction}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # Include router
